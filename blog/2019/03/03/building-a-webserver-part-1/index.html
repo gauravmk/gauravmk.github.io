@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Gaurav Learns a Thing</title>
+  <title>Building a Webserver: Part 1 - TCP Communication - Gaurav Learns a Thing</title>
   <meta name="author" content="Gaurav Kulkarni">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://gauravmk.github.io/">
+  <link rel="canonical" href="http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Gaurav Learns a Thing" type="application/atom+xml">
@@ -63,15 +63,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2019/03/03/building-a-webserver-part-1/">Building a Webserver: Part 1 - TCP Communication</a></h1>
+      <h1 class="entry-title">Building a Webserver: Part 1 - TCP Communication</h1>
     
     
       <p class="meta">
@@ -87,7 +84,7 @@
   </header>
 
 
-  <div class="entry-content"><p>I was watching a <a href="https://www.youtube.com/watch?v=zUihajla2SE">really great talk</a> that Julia Evans gave about learning new things. One suggestion was to build projects like a TCP stack, or a keyboard driver. The point isn&rsquo;t for it to be great but rather to learn something by diving into the guts of something. It sounded like it could be fun so I decided to dig one level deeper into something I depend on all the time: HTTP servers. Through this series, I will be putting together a basic web server using the primitives of TCP and threading. We&rsquo;ll explore how to form HTTP request and responses and different strategies that a server can use to handle many concurrent requests.</p>
+<div class="entry-content"><p>I was watching a <a href="https://www.youtube.com/watch?v=zUihajla2SE">really great talk</a> that Julia Evans gave about learning new things. One suggestion was to build projects like a TCP stack, or a keyboard driver. The point isn&rsquo;t for it to be great but rather to learn something by diving into the guts of something. It sounded like it could be fun so I decided to dig one level deeper into something I depend on all the time: HTTP servers. Through this series, I will be putting together a basic web server using the primitives of TCP and threading. We&rsquo;ll explore how to form HTTP request and responses and different strategies that a server can use to handle many concurrent requests.</p>
 
 <h3>What I know before I start</h3>
 
@@ -222,18 +219,44 @@
 
 <p>In this post we went over the basics of TCP communication, looked at <code>netcat</code> and made a simple program to greet people over a network. In the next post, instead of just sending ASCII text back and forth we&rsquo;ll look at sending HTTP messages back and forth. Before jumping to that, play around with the concepts in this post. I only talked over localhost; try using netcat to talk between two different computers.</p>
 </div>
-  
-  
 
 
-    </article>
+  <footer>
+    <p class="meta">
+      
   
-  <div class="pagination">
+
+<span class="byline author vcard">Posted by <span class="fn">Gaurav Kulkarni</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2019-03-03T18:51:40-08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2019</span></span> <span class='time'>6:51 pm</span></time>
+      
+
+
+    </p>
     
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/" data-via="" data-counturl="http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/" >Tweet</a>
+  
+  
+  
 </div>
+
+    
+    <p class="meta">
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
 <aside class="sidebar">
   
     <section>
@@ -253,6 +276,7 @@
 
   
 </aside>
+
 
     </div>
   </div>
