@@ -4,7 +4,7 @@
   <title><![CDATA[Gaurav Learns a Thing]]></title>
   <link href="http://gauravmk.github.io/atom.xml" rel="self"/>
   <link href="http://gauravmk.github.io/"/>
-  <updated>2019-03-03T20:43:52-08:00</updated>
+  <updated>2019-03-03T20:44:33-08:00</updated>
   <id>http://gauravmk.github.io/</id>
   <author>
     <name><![CDATA[Gaurav Kulkarni]]></name>
@@ -26,7 +26,7 @@
 
 <h3>What I&rsquo;ll be building</h3>
 
-<p>I&rsquo;m going to create a pretty basic calculator web server. It&rsquo;s going to respond to GET requests that look like <code>/add/2/3</code> and return <code>5</code> in the body. Alternatively it&rsquo;ll support a <code>/calc</code> json api which taks a request body that looks something like:</p>
+<p>I&rsquo;m going to create a pretty basic calculator web server. It&rsquo;s going to respond to GET requests that look like <code>/add/2/3</code> and return <code>5</code> in the body. It will also support a <code>/calc</code> json api which takes a request body that looks something like:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
