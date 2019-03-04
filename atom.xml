@@ -4,7 +4,7 @@
   <title><![CDATA[Gaurav Learns a Thing]]></title>
   <link href="http://gauravmk.github.io/atom.xml" rel="self"/>
   <link href="http://gauravmk.github.io/"/>
-  <updated>2019-03-03T20:48:17-08:00</updated>
+  <updated>2019-03-03T20:51:10-08:00</updated>
   <id>http://gauravmk.github.io/</id>
   <author>
     <name><![CDATA[Gaurav Kulkarni]]></name>
@@ -148,6 +148,8 @@
 <p>And the result:</p>
 
 <p><img src="http://gauravmk.github.io/images/tcp_comm.gif" title="demo of communicating over tcp" alt="alt text" /></p>
+
+<p>And with that we&rsquo;ve got basics of sending and receiving message over TCP. We still want to talk HTTP instead of ASCII strings, keep the server alive after responding to a request and be able to handle many requests concurrently, but we&rsquo;ll save all that for future posts.</p>
 
 <h2>Wrapping Up</h2>
 
