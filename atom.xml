@@ -4,7 +4,7 @@
   <title><![CDATA[Gaurav Learns a Thing]]></title>
   <link href="http://gauravmk.github.io/atom.xml" rel="self"/>
   <link href="http://gauravmk.github.io/"/>
-  <updated>2019-03-03T20:45:07-08:00</updated>
+  <updated>2019-03-03T20:48:17-08:00</updated>
   <id>http://gauravmk.github.io/</id>
   <author>
     <name><![CDATA[Gaurav Kulkarni]]></name>
@@ -151,7 +151,7 @@
 
 <h2>Wrapping Up</h2>
 
-<p>In this post we went over the basics of TCP communication, looked at <code>netcat</code> and made a simple program to greet people over a network. In the next post, instead of just sending ASCII text back and forth we&rsquo;ll look at sending HTTP messages back and forth. Before jumping to that, play around with the concepts in this post. I only talked over localhost; try using netcat to talk between two different computers.</p>
+<p>In this post we went over the basics of TCP communication, looked at <code>netcat</code> and made a simple program to greet people over a network. In the next post, we&rsquo;ll look at sending HTTP messages back and forth, instead of just ASCII text. Before jumping to that, play around with the concepts in this post. I only talked over localhost; try using netcat to talk between two different computers.</p>
 ]]></content>
   </entry>
   
