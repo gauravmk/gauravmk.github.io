@@ -4,7 +4,7 @@
   <title><![CDATA[Gaurav Learns a Thing]]></title>
   <link href="http://gauravmk.github.io/atom.xml" rel="self"/>
   <link href="http://gauravmk.github.io/"/>
-  <updated>2019-03-03T20:35:17-08:00</updated>
+  <updated>2019-03-03T20:39:36-08:00</updated>
   <id>http://gauravmk.github.io/</id>
   <author>
     <name><![CDATA[Gaurav Kulkarni]]></name>
@@ -18,11 +18,11 @@
     <link href="http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/"/>
     <updated>2019-03-03T18:51:40-08:00</updated>
     <id>http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1</id>
-    <content type="html"><![CDATA[<p>I was watching a <a href="https://www.youtube.com/watch?v=zUihajla2SE">really great talk</a> that Julia Evans gave about learning new things. One suggestion was to build projects like a TCP stack, or a keyboard driver. The point isn&rsquo;t for it to be great but rather to learn something by diving into the guts of something. It sounded like it could be fun so I decided to dig one level deeper into something I depend on all the time: HTTP servers. Through this series, I will be putting together a basic web server using the primitives of TCP and threading. We&rsquo;ll explore how to form HTTP request and responses and different strategies that a server can use to handle many concurrent requests.</p>
+    <content type="html"><![CDATA[<p>I was watching a <a href="https://www.youtube.com/watch?v=zUihajla2SE">really great talk</a> that Julia Evans gave about learning new things. One suggestion was to build projects like a TCP stack, or a keyboard driver. The point isn&rsquo;t for it to be great but rather to learn something by diving into the guts of something. It sounded like it could be fun so I decided to dig one level deeper into something I depend on all the time: HTTP servers. Through this series, I will be putting together a basic web server using the primitives of TCP and threading. We&rsquo;ll explore how to form HTTP requests and responses as well as different strategies that a server can use to handle many concurrent requests.</p>
 
 <h3>What I know before I start</h3>
 
-<p>I&rsquo;ve starting this project with a high level understanding of how webservers work. That TCP is a way computers talk to each other over networks and how my browser talks to a remote server. I know that webservers use a couple different strategies for handling multiple requests concurrently. They can use threading, spawning a new thread per request. There&rsquo;s also some strategy that involves event loops. I&rsquo;m hazy on the exact details though, but we&rsquo;ll learn soon enough!</p>
+<p>I&rsquo;m starting this project with a high level understanding of how webservers work. That TCP is a way computers talk to each other over networks. I know that webservers use a couple different strategies for handling multiple requests concurrently. They can use threading, spawning a new thread per request. There&rsquo;s also some strategy that involves event loops. I&rsquo;m hazy on the exact details though, but we&rsquo;ll learn soon enough!</p>
 
 <h3>What I&rsquo;ll be building</h3>
 
@@ -34,14 +34,14 @@
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 </pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nx">op</span><span class="o">:</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nx">op</span><span class="o">:</span> <span class="s1">&#39;mult&#39;</span><span class="p">,</span>
 </span><span class='line'>  <span class="nx">arg1</span><span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
 </span><span class='line'>  <span class="nx">arg2</span><span class="o">:</span> <span class="mi">4</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>But more importantly, it will not be done using any webserver frameworks. I can only read and write bytes from open sockets and I must implement support for concurrency by hand. Let&rsquo;s do this!</p>
+<p>But more importantly, it will not be done using any webserver frameworks. I can only read and write bytes from open sockets and I must implement support for concurrency by hand. Well, let&rsquo;s get started.</p>
 
 <h2>Step 1 - TCP Communication</h2>
 
@@ -69,7 +69,7 @@
 
 <p><img src="http://gauravmk.github.io/images/netcat.gif" title="netcat demo" alt="alt text" /></p>
 
-<p>These messages are going to be the building blocks of our web server. Everything we do from here on out is going to be sending messages just like this, just programatically generated and with the messages specially formatted to conform to the HTTP spec.</p>
+<p>Open up your terminal and try it yourself. These messages are going to be the building blocks of our web server. Everything we do from here on out is going to be sending messages just like this, just programatically generated and with the messages specially formatted to conform to the HTTP spec.</p>
 
 <h3>TCP Communication in Python</h3>
 
