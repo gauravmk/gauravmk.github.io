@@ -4,7 +4,7 @@
   <title><![CDATA[Gaurav Learns a Thing]]></title>
   <link href="http://gauravmk.github.io/atom.xml" rel="self"/>
   <link href="http://gauravmk.github.io/"/>
-  <updated>2019-03-03T20:44:33-08:00</updated>
+  <updated>2019-03-03T20:45:07-08:00</updated>
   <id>http://gauravmk.github.io/</id>
   <author>
     <name><![CDATA[Gaurav Kulkarni]]></name>
@@ -41,7 +41,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>But more importantly, it will not be done using any webserver frameworks. I can only read and write bytes from open sockets and I must implement support for concurrency by hand. Let&rsquo;s get started.</p>
+<p>Most importantly, it will not be done using any webserver frameworks. I can only read and write bytes from open sockets and I must implement support for concurrency by hand. Let&rsquo;s get started.</p>
 
 <h2>Step 1 - TCP Communication</h2>
 
