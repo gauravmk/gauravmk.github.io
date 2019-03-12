@@ -9,7 +9,7 @@
   <meta name="author" content="Gaurav Kulkarni">
 
   
-  <meta name="description" content="I was watching a really great talk that Julia Evans gave about learning new things. One suggestion was to build projects like a TCP stack, or a &hellip;">
+  <meta name="description" content="This is part of an ongoing series where we build a webserver from &ldquo;scratch&rdquo; for a certain definition of scratch. The primitives we are &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,445 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2019/03/10/building-a-webserver-part-2-http/">Building a Webserver: Part 2 - HTTP</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-03-10T11:15:06-07:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2019</span></span> <span class='time'>11:15 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This is part of an ongoing series where we build a webserver from &ldquo;scratch&rdquo; for a certain definition of scratch. The primitives we are using are tcp libraries to handle network communication and threading libraries in python to handle concurrent connections.</p>
+
+<p>In the <a href="https://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/">previous post</a>, we practiced TCP communication, sending basic messages using <code>netcat</code> and the <code>socket</code> library in python. This post, we&rsquo;ll upgrade from basic text messages to messages that conform to the protocol defined by HTTP.</p>
+
+<h3>HTTP Requests</h3>
+
+<p>To keep our webserver simple, we&rsquo;re just going to focus on the most basic communication model of requests and responses. We&rsquo;re writing the server so we need to be able to <em>understand requests</em> and <em>form responses</em>. We&rsquo;ll start with understanding requests.</p>
+
+<p>The easiest way I could think to visualize what an HTTP request looks like was to just start sending HTTP requests to our program from the last post and print out what we see. Here&rsquo;s what our test server looks like.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">socket</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Set up the server connection to listen on port 80. </span>
+</span><span class='line'><span class="n">serversocket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+</span><span class='line'><span class="n">serversocket</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># The 1 means it can only handle 1 request at a time and will reject any connection if it&#39;s busy</span>
+</span><span class='line'><span class="n">serversocket</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>    <span class="c"># This call will block until someone tries to connect to port 8080</span>
+</span><span class='line'>    <span class="p">(</span><span class="n">clientsocket</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="o">=</span> <span class="n">serversocket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">msg</span> <span class="o">=</span> <span class="n">clientsocket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="c"># Read a max of 256 bytes</span>
+</span><span class='line'>    <span class="c"># Just print out whatever a client sends us</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;----------&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">clientsocket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now instead of connecting via netcat and sending text messages, we&rsquo;ll use curl which sends http requests. In the next gif, I use curl to send a couple different types of requests. If any of the curl options don&rsquo;t make sense, you can look up the options on the <a href="http://www.mit.edu/afs.new/sipb/user/ssen/src/curl-7.11.1/docs/curl.html">man page</a></p>
+
+<p><img src="/images/print-http.gif" title="demo http via curl" alt="alt text" /></p>
+
+<p>Curl is one way to send http requests but most likely, people will be using a web browser to make requests to my server. I was curious what request Google Chrome would make:</p>
+
+<p><img src="/images/print-http-browser.gif" title="demo http via chrome" alt="alt text" /></p>
+
+<p>It looks really similar, there&rsquo;s just more going on. I&rsquo;m going to take one of the incoming requests we got and try and parse what&rsquo;s going on.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="n">curl</span> <span class="o">-</span><span class="n">H</span> <span class="s">&quot;My-Header: 5&quot;</span> <span class="o">-</span><span class="n">X</span> <span class="n">POST</span> <span class="n">localhost</span><span class="p">:</span><span class="mi">8080</span><span class="o">/</span><span class="n">hello</span> <span class="o">--</span><span class="n">data</span> <span class="s">&quot;gaurav&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>yielded</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">POST</span> <span class="o">/</span><span class="n">hello</span> <span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span>
+</span><span class='line'><span class="n">Host</span><span class="p">:</span> <span class="n">localhost</span><span class="p">:</span><span class="mi">8080</span>
+</span><span class='line'><span class="n">User</span><span class="o">-</span><span class="n">Agent</span><span class="p">:</span> <span class="n">curl</span><span class="o">/</span><span class="mf">7.54</span><span class="o">.</span><span class="mi">0</span>
+</span><span class='line'><span class="n">Accept</span><span class="p">:</span> <span class="o">*/*</span>
+</span><span class='line'><span class="n">My</span><span class="o">-</span><span class="n">Header</span><span class="p">:</span> <span class="mi">5</span>
+</span><span class='line'><span class="n">Content</span><span class="o">-</span><span class="n">Length</span><span class="p">:</span> <span class="mi">6</span>
+</span><span class='line'><span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">x</span><span class="o">-</span><span class="n">www</span><span class="o">-</span><span class="n">form</span><span class="o">-</span><span class="n">urlencoded</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">gaurav</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So first off, we&rsquo;ve got a couple sections: The start-line (aka <code>POST /hello HTTP/1.1</code>), The Header block and the Body. The formal specification for the format of an HTTP message can be found in <a href="https://www.ietf.org/rfc/rfc2616.txt">RFC 2616</a></p>
+
+<blockquote><p>Both [requests and responses] consist of a start-line, zero or more header fields (also known as &ldquo;headers&rdquo;), an empty line (i.e., a line with nothing preceding the CRLF) indicating the end of the header fields, and possibly a message-body.</p></blockquote>
+
+<p>And that&rsquo;s exactly what we see above. The start-line aka Request-Line can be further broken down into three parts: <code>POST</code>, <code>/hello</code> and <code>HTTP/1.1</code>. Again from RFC 2616:</p>
+
+<blockquote><p>The Request-Line begins with a method token, followed by the Request-URI and the protocol version, and ending with CRLF. The elements are separated by SP characters.</p></blockquote>
+
+<h3>Parsing an HTTP Request</h3>
+
+<p>Given what we know, we can create a data structure to store the HTTP Request. A really scrappy class to store an HTTP request:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">HTTPRequest</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">from_str</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request_text</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">req</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">request_text</span> <span class="o">=</span> <span class="n">request_text</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">rest</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">request_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">lines</span> <span class="o">=</span> <span class="n">rest</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">request_line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>        <span class="n">headers_list</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span class='line'>        <span class="n">method</span><span class="p">,</span> <span class="n">uri</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="n">request_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># Turn headers into a dict</span>
+</span><span class='line'>        <span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">header_str</span> <span class="ow">in</span> <span class="n">headers_list</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">header_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;: &quot;</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">uri</span> <span class="o">=</span> <span class="n">uri</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">body</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">req</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And if we update our code to parse the incoming message now, we get something like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>    <span class="c"># This call will block until someone tries to connect to port 8080</span>
+</span><span class='line'>    <span class="p">(</span><span class="n">clientsocket</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="o">=</span> <span class="n">serversocket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">msg</span> <span class="o">=</span> <span class="n">clientsocket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span> <span class="c"># Read a max of 8KB</span>
+</span><span class='line'>    <span class="n">req</span> <span class="o">=</span> <span class="n">HTTPRequest</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">print</span> <span class="s">&quot;{} made a {} request to {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;User-Agent&#39;</span><span class="p">],</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">uri</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># Close the connection</span>
+</span><span class='line'>    <span class="n">clientsocket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Trying it out:</p>
+
+<p><img src="/images/parse-http.gif" title="parsing http requests" alt="alt text" /></p>
+
+<p>Which will serve us just fine.</p>
+
+<h3>HTTP Response</h3>
+
+<p>On the flip side, we&rsquo;re going to need to form an HTTP response. The web browser right now just errors when we close the connection. Again, we&rsquo;ll take the approach of seeing the raw response from an actual server. One way to do that would be using netcat:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="n">echo</span> <span class="o">-</span><span class="n">n</span> <span class="o">-</span><span class="n">e</span> <span class="s">&quot;GET /200 HTTP/1.0</span><span class="se">\r\n</span><span class="s">Host: httpstat.us</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span> <span class="o">|</span> <span class="n">nc</span> <span class="n">httpstat</span><span class="o">.</span><span class="n">us</span> <span class="mi">80</span>
+</span><span class='line'><span class="n">HTTP</span><span class="o">/</span><span class="mf">1.1</span> <span class="mi">200</span> <span class="n">OK</span>
+</span><span class='line'><span class="n">Cache</span><span class="o">-</span><span class="n">Control</span><span class="p">:</span> <span class="n">private</span>
+</span><span class='line'><span class="n">Content</span><span class="o">-</span><span class="n">Length</span><span class="p">:</span> <span class="mi">6</span>
+</span><span class='line'><span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">plain</span><span class="p">;</span> <span class="n">charset</span><span class="o">=</span><span class="n">utf</span><span class="o">-</span><span class="mi">8</span>
+</span><span class='line'><span class="n">Server</span><span class="p">:</span> <span class="n">Microsoft</span><span class="o">-</span><span class="n">IIS</span><span class="o">/</span><span class="mf">10.0</span>
+</span><span class='line'><span class="n">X</span><span class="o">-</span><span class="n">AspNetMvc</span><span class="o">-</span><span class="n">Version</span><span class="p">:</span> <span class="mf">5.1</span>
+</span><span class='line'><span class="n">Access</span><span class="o">-</span><span class="n">Control</span><span class="o">-</span><span class="n">Allow</span><span class="o">-</span><span class="n">Origin</span><span class="p">:</span> <span class="o">*</span>
+</span><span class='line'><span class="n">X</span><span class="o">-</span><span class="n">AspNet</span><span class="o">-</span><span class="n">Version</span><span class="p">:</span> <span class="mf">4.0</span><span class="o">.</span><span class="mi">30319</span>
+</span><span class='line'><span class="n">X</span><span class="o">-</span><span class="n">Powered</span><span class="o">-</span><span class="n">By</span><span class="p">:</span> <span class="n">ASP</span><span class="o">.</span><span class="n">NET</span>
+</span><span class='line'><span class="n">Set</span><span class="o">-</span><span class="n">Cookie</span><span class="p">:</span> <span class="n">ARRAffinity</span><span class="o">=</span><span class="n">beec3692495883b8df6195e900c12f49514e054d865a22ad2951c84f51dbaf93</span><span class="p">;</span><span class="n">Path</span><span class="o">=/</span><span class="p">;</span><span class="n">HttpOnly</span><span class="p">;</span><span class="n">Domain</span><span class="o">=</span><span class="n">httpstat</span><span class="o">.</span><span class="n">us</span>
+</span><span class='line'><span class="n">Date</span><span class="p">:</span> <span class="n">Sun</span><span class="p">,</span> <span class="mi">10</span> <span class="n">Mar</span> <span class="mi">2019</span> <span class="mi">19</span><span class="p">:</span><span class="mi">45</span><span class="p">:</span><span class="mi">59</span> <span class="n">GMT</span>
+</span><span class='line'><span class="n">Connection</span><span class="p">:</span> <span class="n">close</span>
+</span><span class='line'>
+</span><span class='line'><span class="mi">200</span> <span class="n">OK</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note: the <code>echo</code> line above is manually constructing an HTTP request that looks like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">GET</span> <span class="o">/</span><span class="mi">200</span> <span class="n">HTTP</span><span class="o">/</span><span class="mf">1.0</span>
+</span><span class='line'><span class="n">Host</span><span class="p">:</span> <span class="n">httpstat</span><span class="o">.</span><span class="n">us</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The response that came back from running that command looks a lot like the HTTP request. It&rsquo;s got a &ldquo;Status-Line&rdquo; that mirrors the &ldquo;Request-Line&rdquo;. It also has a header block and a body. This makes parsing it really similar to parsing an HTTP request.</p>
+
+<p>Refactoring our earlier code to support both requests and responses as well as both parsing and constructing http messages, we get something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">HTTPMessage</span><span class="p">:</span>
+</span><span class='line'>    <span class="nd">@classmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">from_str</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request_text</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">message</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">request_text</span> <span class="o">=</span> <span class="n">request_text</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">rest</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">request_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">lines</span> <span class="o">=</span> <span class="n">rest</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">start_line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>        <span class="n">headers_list</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># Turn headers into a dict</span>
+</span><span class='line'>        <span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">header_str</span> <span class="ow">in</span> <span class="n">headers_list</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">header_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;: &quot;</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">headers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">message</span><span class="o">.</span><span class="n">start_line</span> <span class="o">=</span> <span class="n">start_line</span>
+</span><span class='line'>        <span class="n">message</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span>
+</span><span class='line'>        <span class="n">message</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">body</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">message</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;{}</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_line</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span class='line'>            <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;{}: {}</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\r\n</span><span class="s">{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">msg</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">HTTPRequest</span><span class="p">(</span><span class="n">HTTPMessage</span><span class="p">):</span>
+</span><span class='line'>    <span class="nd">@classmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">from_str</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">request_text</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">req</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">request_text</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">start_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">req</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">start_line</span> <span class="o">=</span> <span class="s">&quot;{} {} {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_str</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">HTTPResponse</span><span class="p">(</span><span class="n">HTTPMessage</span><span class="p">):</span>
+</span><span class='line'>    <span class="nd">@classmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">from_str</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">resp_text</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">req</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">request_text</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">req</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">start_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">req</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">start_line</span> <span class="o">=</span> <span class="s">&quot;{} {} {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_str</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Where the implementation difference between HTTPRequests and HTTPResponses is just in the <code>start_line</code> which matches what we saw above.</p>
+
+<h3>Putting it all together</h3>
+
+<p>We&rsquo;ve got everything we need to do a really basic server. It&rsquo;s going to simply spit back out the URL that was requested with a 200 status code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>    <span class="c"># This call will block until someone tries to connect to port 8080</span>
+</span><span class='line'>    <span class="p">(</span><span class="n">clientsocket</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="o">=</span> <span class="n">serversocket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">msg</span> <span class="o">=</span> <span class="n">clientsocket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span> <span class="c"># Read a max of 8KB</span>
+</span><span class='line'>    <span class="n">req</span> <span class="o">=</span> <span class="n">HTTPRequest</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">res</span> <span class="o">=</span> <span class="n">HTTPResponse</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">res</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">version</span>
+</span><span class='line'>    <span class="n">res</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="mi">200</span>
+</span><span class='line'>    <span class="n">res</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="s">&quot;OK&quot;</span>
+</span><span class='line'>    <span class="n">res</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">uri</span>
+</span><span class='line'>    <span class="n">res</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">clientsocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">to_str</span><span class="p">())</span>
+</span><span class='line'>    <span class="c"># Close the connection</span>
+</span><span class='line'>    <span class="n">clientsocket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And indeed, Google Chrome knows how to understand the response it gets back:</p>
+
+<p><img src="/images/demo-echo.png" title="demo of echo server" alt="alt text" /></p>
+
+<h3>Wrapping Up</h3>
+
+<p>In this post, we saw what raw HTTP requests and responses look like and threw together some code to serialize and deserialize these HTTP messages. While it doesn&rsquo;t do any fancy routing, and any necessary response headers have to be set explicitly (for instance, if we were returning a JSON response and wanted to tell the client about the <code>Content-Type</code>), we could do all of those things by hand with the pieces that we have.</p>
+
+<p>Before moving on, try messing with some of this stuff on your own. An easy way to jump in is to take this command from above:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="n">echo</span> <span class="o">-</span><span class="n">n</span> <span class="o">-</span><span class="n">e</span> <span class="s">&quot;GET /200 HTTP/1.0</span><span class="se">\r\n</span><span class="s">Host: httpstat.us</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span> <span class="o">|</span> <span class="n">nc</span> <span class="n">httpstat</span><span class="o">.</span><span class="n">us</span> <span class="mi">80</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and modify it. For instance, try sending an <code>Accept</code> header with the value <code>application/json</code>, and see if the server responds with an appropriate <code>Content-Type</code> header</p>
+
+<p>One glaring problem with our web server so far is that it can only handle one request at a time. If a request comes in while this code is in the <code>while</code> loop above, that request just has to wait for the next iteration of the loop. This is no good, we want to be able to support concurrent requests otherwise our webserver would fall apart pretty quickly under any reasonable amount of load. In the next post we&rsquo;ll look at some basic strategies for supporting concurrent requests.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -253,6 +692,10 @@
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/03/10/building-a-webserver-part-2-http/">Building a Webserver: Part 2 - HTTP</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2019/03/03/building-a-webserver-part-1/">Building a Webserver: Part 1 - TCP Communication</a>

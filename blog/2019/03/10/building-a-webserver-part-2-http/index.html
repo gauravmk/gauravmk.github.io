@@ -1,24 +1,102 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Gaurav Learns a Thing]]></title>
-  <link href="http://gauravmk.github.io/atom.xml" rel="self"/>
-  <link href="http://gauravmk.github.io/"/>
-  <updated>2019-03-11T23:07:53-07:00</updated>
-  <id>http://gauravmk.github.io/</id>
-  <author>
-    <name><![CDATA[Gaurav Kulkarni]]></name>
-    
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Building a Webserver: Part 2 - HTTP - Gaurav Learns a Thing</title>
+  <meta name="author" content="Gaurav Kulkarni">
 
   
-  <entry>
-    <title type="html"><![CDATA[Building a Webserver: Part 2 - HTTP]]></title>
-    <link href="http://gauravmk.github.io/blog/2019/03/10/building-a-webserver-part-2-http/"/>
-    <updated>2019-03-10T11:15:06-07:00</updated>
-    <id>http://gauravmk.github.io/blog/2019/03/10/building-a-webserver-part-2-http</id>
-    <content type="html"><![CDATA[<p>This is part of an ongoing series where we build a webserver from &ldquo;scratch&rdquo; for a certain definition of scratch. The primitives we are using are tcp libraries to handle network communication and threading libraries in python to handle concurrent connections.</p>
+  <meta name="description" content="This is part of an ongoing series where we build a webserver from &ldquo;scratch&rdquo; for a certain definition of scratch. The primitives we are &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://gauravmk.github.io/blog/2019/03/10/building-a-webserver-part-2-http/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Gaurav Learns a Thing" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-135512097-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Gaurav Learns a Thing</a></h1>
+  
+    <h2>A blog for exploring things through code</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="gauravmk.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Building a Webserver: Part 2 - HTTP</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2019-03-10T11:15:06-07:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2019</span></span> <span class='time'>11:15 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>This is part of an ongoing series where we build a webserver from &ldquo;scratch&rdquo; for a certain definition of scratch. The primitives we are using are tcp libraries to handle network communication and threading libraries in python to handle concurrent connections.</p>
 
 <p>In the <a href="https://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/">previous post</a>, we practiced TCP communication, sending basic messages using <code>netcat</code> and the <code>socket</code> library in python. This post, we&rsquo;ll upgrade from basic text messages to messages that conform to the protocol defined by HTTP.</p>
 
@@ -69,11 +147,11 @@
 
 <p>Now instead of connecting via netcat and sending text messages, we&rsquo;ll use curl which sends http requests. In the next gif, I use curl to send a couple different types of requests. If any of the curl options don&rsquo;t make sense, you can look up the options on the <a href="http://www.mit.edu/afs.new/sipb/user/ssen/src/curl-7.11.1/docs/curl.html">man page</a></p>
 
-<p><img src="http://gauravmk.github.io/images/print-http.gif" title="demo http via curl" alt="alt text" /></p>
+<p><img src="/images/print-http.gif" title="demo http via curl" alt="alt text" /></p>
 
 <p>Curl is one way to send http requests but most likely, people will be using a web browser to make requests to my server. I was curious what request Google Chrome would make:</p>
 
-<p><img src="http://gauravmk.github.io/images/print-http-browser.gif" title="demo http via chrome" alt="alt text" /></p>
+<p><img src="/images/print-http-browser.gif" title="demo http via chrome" alt="alt text" /></p>
 
 <p>It looks really similar, there&rsquo;s just more going on. I&rsquo;m going to take one of the incoming requests we got and try and parse what&rsquo;s going on.</p>
 
@@ -201,7 +279,7 @@
 
 <p>Trying it out:</p>
 
-<p><img src="http://gauravmk.github.io/images/parse-http.gif" title="parsing http requests" alt="alt text" /></p>
+<p><img src="/images/parse-http.gif" title="parsing http requests" alt="alt text" /></p>
 
 <p>Which will serve us just fine.</p>
 
@@ -413,7 +491,7 @@
 
 <p>And indeed, Google Chrome knows how to understand the response it gets back:</p>
 
-<p><img src="http://gauravmk.github.io/images/demo-echo.png" title="demo of echo server" alt="alt text" /></p>
+<p><img src="/images/demo-echo.png" title="demo of echo server" alt="alt text" /></p>
 
 <h3>Wrapping Up</h3>
 
@@ -429,151 +507,101 @@
 <p>and modify it. For instance, try sending an <code>Accept</code> header with the value <code>application/json</code>, and see if the server responds with an appropriate <code>Content-Type</code> header</p>
 
 <p>One glaring problem with our web server so far is that it can only handle one request at a time. If a request comes in while this code is in the <code>while</code> loop above, that request just has to wait for the next iteration of the loop. This is no good, we want to be able to support concurrent requests otherwise our webserver would fall apart pretty quickly under any reasonable amount of load. In the next post we&rsquo;ll look at some basic strategies for supporting concurrent requests.</p>
-]]></content>
-  </entry>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
   
-  <entry>
-    <title type="html"><![CDATA[Building a Webserver: Part 1 - TCP Communication]]></title>
-    <link href="http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1/"/>
-    <updated>2019-03-03T18:51:40-08:00</updated>
-    <id>http://gauravmk.github.io/blog/2019/03/03/building-a-webserver-part-1</id>
-    <content type="html"><![CDATA[<p>I was watching a <a href="https://www.youtube.com/watch?v=zUihajla2SE">really great talk</a> that Julia Evans gave about learning new things. One suggestion was to build projects like a TCP stack, or a keyboard driver. The point isn&rsquo;t for it to be great but rather to learn something by diving into the guts of something. It sounded like it could be fun so I decided to dig one level deeper into something I depend on all the time: HTTP servers. Through this series, I will be putting together a basic web server using the primitives of TCP and threading. We&rsquo;ll explore how to form HTTP requests and responses as well as different strategies that a server can use to handle many concurrent requests.</p>
 
-<h3>What I know before I start</h3>
+<span class="byline author vcard">Posted by <span class="fn">Gaurav Kulkarni</span></span>
 
-<p>I&rsquo;m starting this project with a high level understanding of how webservers work. That TCP is a way computers talk to each other over networks. I know that webservers use a couple different strategies for handling multiple requests concurrently. They can use threading, spawning a new thread per request. There&rsquo;s also some strategy that involves event loops. I&rsquo;m hazy on the exact details though, but we&rsquo;ll learn soon enough!</p>
-
-<h3>What I&rsquo;ll be building</h3>
-
-<p>I&rsquo;m going to create a pretty basic calculator web server. It&rsquo;s going to respond to GET requests that look like <code>/add/2/3</code> and return <code>5</code> in the body. It will also support a <code>/calc</code> json api which takes a request body that looks something like:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nx">op</span><span class="o">:</span> <span class="s1">&#39;mult&#39;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nx">arg1</span><span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>  <span class="nx">arg2</span><span class="o">:</span> <span class="mi">4</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
+      
 
 
-<p>Most importantly, it will not be done using any webserver frameworks. I can only read and write bytes from open sockets and I must implement support for concurrency by hand. Let&rsquo;s get started.</p>
-
-<h2>Step 1 - TCP Communication</h2>
-
-<p>The very first thing to get comfortable with is talking TCP. TCP is a protocol for sending messages between a source and a destination and for this project, that&rsquo;s really all we need to know. This all feels a little abstract though; let&rsquo;s see TCP messages in action. The easiest way I&rsquo;ve found to do this is to use a program called <code>netcat</code>. You can check if you have <code>netcat</code> installed by running <code>nc</code>.</p>
-
-<p>The simplest demo of what you can do in <code>netcat</code> is to open a terminal with two tabs. In one run</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span> <span class="nx">nc</span> <span class="o">-</span><span class="nx">l</span> <span class="mi">1234</span>
-</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Which will just sit there and wait. <code>-l</code> means &ldquo;run netcat in listen mode&rdquo; and 1234 is the port it&rsquo;s listening to. Basically, it&rsquo;s just waiting for someone to connect to that port and send some messages.</p>
-
-<p>So let&rsquo;s connect to that port. In a separate tab run</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span> <span class="nx">nc</span> <span class="o">-</span><span class="nx">v</span> <span class="nx">localhost</span> <span class="mi">1234</span>
-</span></code></pre></td></tr></table></div></figure>
+<time class='entry-date' datetime='2019-03-10T11:15:06-07:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2019</span></span> <span class='time'>11:15 am</span></time>
+      
 
 
-<p><code>-v</code> means &ldquo;run in verbose mode&rdquo;. For learning purposes we&rsquo;re just gonna run everything always in verbose more. You should see something like:</p>
-
-<p>At this point you should be able to send a message from one of the tabs and see it echoed in the second. You can see a demo here:</p>
-
-<p><img src="http://gauravmk.github.io/images/netcat.gif" title="netcat demo" alt="alt text" /></p>
-
-<p>Open up your terminal and try it yourself. These messages are going to be the building blocks of our web server. Everything we do from here on out is going to be sending messages just like this, just programatically generated and with the messages specially formatted to conform to the HTTP spec.</p>
-
-<h3>TCP Communication in Python</h3>
-
-<p>I&rsquo;ll be doing this whole project in python. Note: I&rsquo;m working in python 3.7.2. Let&rsquo;s look at the code to send and receive TCP messages.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">socket</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Set up the server connection to listen on port 80. </span>
-</span><span class='line'><span class="n">serversocket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
-</span><span class='line'><span class="n">serversocket</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># The 1 means it can only handle 1 request at a time and will reject any connection if it&#39;s busy</span>
-</span><span class='line'><span class="n">serversocket</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># This call will block until someone tries to connect to port 8080</span>
-</span><span class='line'><span class="p">(</span><span class="n">clientsocket</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="o">=</span> <span class="n">serversocket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">print</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This is just going to accept connections and print out who is connecting. Let&rsquo;s give it a try.</p>
-
-<p><img src="http://gauravmk.github.io/images/just_conn.gif" title="demo of establishing a tcp connection" alt="alt text" /></p>
-
-<p>That&rsquo;s a start! Now instead of just establishing a connection and printing the connection information, let&rsquo;s actually send and receive messages. For this example, we&rsquo;re going to ask for a name, receive the name and then greet the connector.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">socket</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Set up the server connection to listen on port 80. </span>
-</span><span class='line'><span class="n">serversocket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
-</span><span class='line'><span class="n">serversocket</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># The 1 means it can only handle 1 request at a time and will reject any connection if it&#39;s busy</span>
-</span><span class='line'><span class="n">serversocket</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># This call will block until someone tries to connect to port 8080</span>
-</span><span class='line'><span class="p">(</span><span class="n">clientsocket</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span> <span class="o">=</span> <span class="n">serversocket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># send and recv require byte-encoded strings</span>
-</span><span class='line'><span class="n">clientsocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;What</span><span class="se">\&#39;</span><span class="s">s your name? &#39;</span><span class="p">)</span>
-</span><span class='line'><span class="n">msg</span> <span class="o">=</span> <span class="n">clientsocket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span> <span class="c"># Read a max of 256 bytes</span>
-</span><span class='line'><span class="n">clientsocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;Hello &#39;</span> <span class="o">+</span> <span class="n">msg</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>And the result:</p>
-
-<p><img src="http://gauravmk.github.io/images/tcp_comm.gif" title="demo of communicating over tcp" alt="alt text" /></p>
-
-<p>And with that we&rsquo;ve got basics of sending and receiving message over TCP. We still want to talk HTTP instead of ASCII strings, keep the server alive after responding to a request and be able to handle many requests concurrently, but we&rsquo;ll save all that for future posts.</p>
-
-<h2>Wrapping Up</h2>
-
-<p>In this post we went over the basics of TCP communication, looked at <code>netcat</code> and made a simple program to greet people over a network. In the next post, we&rsquo;ll look at sending HTTP messages back and forth, instead of just ASCII text. Before jumping to that, play around with the concepts in this post. I only talked over localhost; try using netcat to talk between two different computers.</p>
-]]></content>
-  </entry>
+    </p>
+    
+      <div class="sharing">
   
-</feed>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://gauravmk.github.io/blog/2019/03/10/building-a-webserver-part-2-http/" data-via="" data-counturl="http://gauravmk.github.io/blog/2019/03/10/building-a-webserver-part-2-http/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/03/03/building-a-webserver-part-1/" title="Previous Post: Building a Webserver: Part 1 - TCP Communication">&laquo; Building a Webserver: Part 1 - TCP Communication</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/03/10/building-a-webserver-part-2-http/">Building a Webserver: Part 2 - HTTP</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/03/03/building-a-webserver-part-1/">Building a Webserver: Part 1 - TCP Communication</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2019 - Gaurav Kulkarni -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
